@@ -55,17 +55,14 @@ def main():
         return
 
     for path, srt_path in subtitles.items():
-        out_path = os.path.join(output_dir, f"{filename(path)}.mp4")
-
-        print(f"Adding subtitles to {filename(path)}...")
-
-        video = ffmpeg.input(path)
-        audio = video.audio
-
-        ffmpeg.concat(
-            video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=3"), audio, v=1, a=1
-        ).output(out_path).run(quiet=True, overwrite_output=True)
-
+        out_path = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(path))[0]}.mp4")
+        print(f"Adding subtitles to {os.path.basename(path)}...")
+        stream = ffmpeg.input(path)
+        audio = stream.audio
+        video = stream.video.filter('subtitles', filename=srt_path,
+                                    force_style='OutlineColour=&H40000000,BorderStyle=3')
+        stream = ffmpeg.output(audio, video, out_path, vcodec='libx264', acodec='copy')
+        ffmpeg.run(stream)
         print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
 
 
