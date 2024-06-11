@@ -18,6 +18,8 @@ def main():
                         default=".", help="directory to save the outputs")
     parser.add_argument("--output_srt", type=str2bool, default=False,
                         help="whether to output the .srt file along with the video files")
+    parser.add_argument("--subtitle_format", type=str, default="srt", choices=["srt","vtt"],
+                        help="subtitle file format type")
     parser.add_argument("--srt_only", type=str2bool, default=False,
                         help="only generate the .srt file and not create overlayed video")
     parser.add_argument("--verbose", type=str2bool, default=False,
@@ -32,6 +34,7 @@ def main():
     model_name: str = args.pop("model")
     output_dir: str = args.pop("output_dir")
     output_srt: bool = args.pop("output_srt")
+    subtitle_format: str = args.pop("subtitle_format")
     srt_only: bool = args.pop("srt_only")
     language: str = args.pop("language")
     
@@ -48,7 +51,7 @@ def main():
     model = whisper.load_model(model_name)
     audios = get_audio(args.pop("video"))
     subtitles = get_subtitles(
-        audios, output_srt or srt_only, output_dir, lambda audio_path: model.transcribe(audio_path, **args)
+        audios, output_srt or srt_only, subtitle_format, output_dir, lambda audio_path: model.transcribe(audio_path, **args)
     )
 
     if srt_only:
@@ -88,12 +91,16 @@ def get_audio(paths):
     return audio_paths
 
 
-def get_subtitles(audio_paths: list, output_srt: bool, output_dir: str, transcribe: callable):
+def get_subtitles(audio_paths: list, output_srt: bool,subtitle_format: str, output_dir: str, transcribe: callable):
     subtitles_path = {}
 
     for path, audio_path in audio_paths.items():
         srt_path = output_dir if output_srt else tempfile.gettempdir()
-        srt_path = os.path.join(srt_path, f"{filename(path)}.srt")
+
+        if(subtitle_format=="srt"):
+            srt_path = os.path.join(srt_path, f"{filename(path)}.srt")
+        else: # vtt 
+            srt_path = os.path.join(srt_path, f"{filename(path)}.vtt")
         
         print(
             f"Generating subtitles for {filename(path)}... This might take a while."
@@ -104,7 +111,7 @@ def get_subtitles(audio_paths: list, output_srt: bool, output_dir: str, transcri
         warnings.filterwarnings("default")
 
         with open(srt_path, "w", encoding="utf-8") as srt:
-            write_srt(result["segments"], file=srt)
+            write_srt(result["segments"], file=srt,subtitle_format=subtitle_format)
 
         subtitles_path[path] = srt_path
 
