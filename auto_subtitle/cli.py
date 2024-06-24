@@ -16,6 +16,10 @@ def main():
                         choices=whisper.available_models(), help="name of the Whisper model to use")
     parser.add_argument("--output_dir", "-o", type=str,
                         default=".", help="directory to save the outputs")
+    parser.add_argument("--output_mkv", type=str2bool, default=False,
+                        help="whether to output the new subtitled video as an .mkv container (True) or an .mp4 container (False)")
+    parser.add_argument("--output_mkv", type=str2bool, default=False,
+                        help="whether to output the new subtitled video as an .mkv container (True) or an .mp4 container (False)")
     parser.add_argument("--output_srt", type=str2bool, default=False,
                         help="whether to output the .srt file along with the video files")
     parser.add_argument("--srt_only", type=str2bool, default=False,
@@ -34,6 +38,7 @@ def main():
     output_srt: bool = args.pop("output_srt")
     srt_only: bool = args.pop("srt_only")
     language: str = args.pop("language")
+    output_mkv: bool = args.pop("output_mkv")
     
     os.makedirs(output_dir, exist_ok=True)
 
@@ -54,17 +59,22 @@ def main():
     if srt_only:
         return
 
+    ext = "mkv" if output_mkv else "mp4"
     for path, srt_path in subtitles.items():
-        out_path = os.path.join(output_dir, f"{filename(path)}.mp4")
+        out_path = os.path.join(output_dir, f"{filename(path)}.{ext}")
 
         print(f"Adding subtitles to {filename(path)}...")
 
         video = ffmpeg.input(path)
         audio = video.audio
 
-        ffmpeg.concat(
-            video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=3"), audio, v=1, a=1
-        ).output(out_path).run(quiet=True, overwrite_output=True)
+        if output_mkv:
+            srt = ffmpeg.input(srt_path)
+            ffmpeg.output(srt, video, out_path, vcodec='copy', scodec='copy').run(quiet=False, overwrite_output=True)
+        else:
+            ffmpeg.concat(
+                video.filter('subtitles', srt_path, force_style="OutlineColour=&H40000000,BorderStyle=3"), audio, v=1, a=1
+            ).output(out_path).run(quiet=False, overwrite_output=True)
 
         print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
 
