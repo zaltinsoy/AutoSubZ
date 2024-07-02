@@ -18,8 +18,6 @@ def main():
                         default=".", help="directory to save the outputs")
     parser.add_argument("--output_mkv", type=str2bool, default=False,
                         help="whether to output the new subtitled video as an .mkv container (True) or an .mp4 container (False)")
-    parser.add_argument("--output_mkv", type=str2bool, default=False,
-                        help="whether to output the new subtitled video as an .mkv container (True) or an .mp4 container (False)")
     parser.add_argument("--output_srt", type=str2bool, default=False,
                         help="whether to output the .srt file along with the video files")
     parser.add_argument("--subtitle_format", type=str, default="srt", choices=["srt","vtt"],
@@ -63,21 +61,20 @@ def main():
         return
 
     ext = "mkv" if output_mkv else "mp4"
-    for path, srt_path in subtitles.items():
 
+    for path, srt_path in subtitles.items():
 
         out_path = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(path))[0]}.{ext}")
         print(f"Adding subtitles to {os.path.basename(path)}...")
     
         stream = ffmpeg.input(path)
-        video = stream.video.filter('subtitles', filename=srt_path,force_style='OutlineColour=&H40000000,BorderStyle=3')
         audio = stream.audio
+        videoWithSub = stream.video.filter('subtitles', filename=srt_path,force_style='OutlineColour=&H40000000,BorderStyle=3') 
 
         if output_mkv:
-            srt = ffmpeg.input(srt_path)
-            stream = ffmpeg.output(srt, video, out_path, vcodec='copy', scodec='copy')
+            stream = ffmpeg.output(ffmpeg.input(srt_path), stream, out_path, vcodec='copy', scodec='copy')
         else:
-            stream = ffmpeg.output(audio, video, out_path, vcodec='libx264', acodec='copy')
+            stream = ffmpeg.output(audio, videoWithSub, out_path, vcodec='libx264', acodec='copy')
 
         ffmpeg.run(stream)
         print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
