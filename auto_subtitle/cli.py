@@ -40,6 +40,7 @@ def main():
     srt_only: bool = args.pop("srt_only")
     language: str = args.pop("language")
     output_mkv: bool = args.pop("output_mkv")
+    verbose: bool = args.pop("verbose")
     
     os.makedirs(output_dir, exist_ok=True)
 
@@ -76,7 +77,7 @@ def main():
         else:
             stream = ffmpeg.output(audio, videoWithSub, out_path, vcodec='libx264', acodec='copy')
 
-        ffmpeg.run(stream)
+        ffmpeg.run(stream, quiet= not verbose, overwrite_output=True)
         print(f"Saved subtitled video to {os.path.abspath(out_path)}.")
 
 
