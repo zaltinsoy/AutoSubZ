@@ -22,6 +22,8 @@ def main():
                         help="whether to output the .srt file along with the video files")
     parser.add_argument("--subtitle_format", type=str, default="srt", choices=["srt","vtt"],
                         help="subtitle file format type")
+    parser.add_argument("--output_txt", type=str2bool, default=False,
+                        help="whether to save the subtitles in a txt file")
     parser.add_argument("--srt_only", type=str2bool, default=False,
                         help="only generate the .srt file and not create overlayed video")
     parser.add_argument("--verbose", type=str2bool, default=False,
@@ -37,6 +39,7 @@ def main():
     output_dir: str = args.pop("output_dir")
     output_srt: bool = args.pop("output_srt")
     subtitle_format: str = args.pop("subtitle_format")
+    output_txt: bool = args.pop("output_txt")
     srt_only: bool = args.pop("srt_only")
     language: str = args.pop("language")
     output_mkv: bool = args.pop("output_mkv")
@@ -55,7 +58,7 @@ def main():
     model = whisper.load_model(model_name)
     audios = get_audio(args.pop("video"))
     subtitles = get_subtitles(
-        audios, output_srt or srt_only, subtitle_format, output_dir, lambda audio_path: model.transcribe(audio_path, **args)
+        audios, output_srt or srt_only, subtitle_format,output_txt, output_dir, lambda audio_path: model.transcribe(audio_path, **args)        
     )
 
     if srt_only:
@@ -100,7 +103,8 @@ def get_audio(paths):
     return audio_paths
 
 
-def get_subtitles(audio_paths: list, output_srt: bool,subtitle_format: str, output_dir: str, transcribe: callable):
+
+def get_subtitles(audio_paths: list, output_srt: bool,subtitle_format: str,output_txt: bool, output_dir: str, transcribe: callable):
     subtitles_path = {}
 
     for path, audio_path in audio_paths.items():
@@ -123,6 +127,13 @@ def get_subtitles(audio_paths: list, output_srt: bool,subtitle_format: str, outp
             write_srt(result["segments"], file=srt,subtitle_format=subtitle_format)
 
         subtitles_path[path] = srt_path
+
+        if output_txt:
+            text_path = os.path.join(output_dir, f"{filename(path)}.txt")
+            with open(text_path, "w", encoding="utf-8") as text_file:
+                for segment in result["segments"]:
+                    print(segment["text"], file=text_file)
+            print(f"Saving subtitles to text file: {text_path}")
 
     return subtitles_path
 
