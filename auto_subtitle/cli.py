@@ -4,7 +4,7 @@ import whisper
 import argparse
 import warnings
 import tempfile
-from .utils import filename, str2bool, write_srt
+from .utils import filename, write_srt
 
 
 def main():
@@ -16,24 +16,28 @@ def main():
                         choices=whisper.available_models(), help="name of the Whisper model to use")
     parser.add_argument("--output_dir", "-o", type=str,
                         default=".", help="directory to save the outputs")
-    parser.add_argument("--output_mkv", type=str2bool, default=False,
-                        help="whether to output the new subtitled video as an .mkv container (True) or an .mp4 container (False)")
-    parser.add_argument("--output_srt", type=str2bool, default=False,
-                        help="whether to output the .srt file along with the video files")
     parser.add_argument("--subtitle_format", type=str, default="srt", choices=["srt","vtt"],
                         help="subtitle file format type")
-    parser.add_argument("--output_txt", type=str2bool, default=False,
-                        help="whether to save the subtitles in a txt file")
-    parser.add_argument("--srt_only", type=str2bool, default=False,
+    parser.add_argument("--output_mkv", action="store_true",
+                        help="whether to output the new subtitled video as an .mkv container rather than .mp4 container")
+    parser.add_argument("--output_srt", action="store_true",
+                        help="output the .srt file along with the video files")
+    parser.add_argument("--output_txt", action="store_true",
+                        help="whether to also save the subtitles as a .txt file")
+    parser.add_argument("--srt_only", action="store_true",
                         help="only generate the .srt file and not create overlayed video")
-    parser.add_argument("--verbose", type=str2bool, default=False,
-                        help="whether to print out the progress and debug messages")
+    parser.add_argument("--verbose", action="store_true",
+                        help="print out the progress and debug messages")
+    
     parser.add_argument("--task", type=str, default="transcribe", choices=[
                         "transcribe", "translate"], help="whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')")
-    parser.add_argument("--language", type=str, default="auto", choices=["auto","af","am","ar","as","az","ba","be","bg","bn","bo","br","bs","ca","cs","cy","da","de","el","en","es","et","eu","fa","fi","fo","fr","gl","gu","ha","haw","he","hi","hr","ht","hu","hy","id","is","it","ja","jw","ka","kk","km","kn","ko","la","lb","ln","lo","lt","lv","mg","mi","mk","ml","mn","mr","ms","mt","my","ne","nl","nn","no","oc","pa","pl","ps","pt","ro","ru","sa","sd","si","sk","sl","sn","so","sq","sr","su","sv","sw","ta","te","tg","th","tk","tl","tr","tt","uk","ur","uz","vi","yi","yo","zh"], 
-    help="What is the origin language of the video? If unset, it is detected automatically.")
-
-    parser.add_argument("--word_timestamps", type=str2bool, default=False, help="(experimental) extract word-level timestamps and refine the results based on them")
+    parser.add_argument("--language", type=str, default="auto", choices=["auto","af","am","ar","as","az","ba","be","bg","bn","bo","br","bs","ca","cs","cy","da","de","el","en",
+                        "es","et","eu","fa","fi","fo","fr","gl","gu","ha","haw","he","hi","hr","ht","hu","hy","id","is","it","ja","jw","ka","kk","km","kn","ko","la","lb","ln",
+                        "lo","lt","lv","mg","mi","mk","ml","mn","mr","ms","mt","my","ne","nl","nn","no","oc","pa","pl","ps","pt","ro","ru","sa","sd","si","sk","sl","sn","so",
+                        "sq","sr","su","sv","sw","ta","te","tg","th","tk","tl","tr","tt","uk","ur","uz","vi","yi","yo","zh"], 
+                        help="What is the origin language of the video? If unset, it is detected automatically.")
+    parser.add_argument("--word_timestamps", action="store_true", default=False, 
+                        help="(experimental) extract word-level timestamps and refine the results based on them")
 
     args = parser.parse_args().__dict__
     model_name: str = args.pop("model")
