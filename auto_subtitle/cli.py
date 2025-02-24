@@ -20,12 +20,12 @@ def main():
                         help="subtitle file format type")
     parser.add_argument("--output_mkv", action="store_true",
                         help="whether to output the new subtitled video as an .mkv container rather than .mp4 container")
-    parser.add_argument("--output_srt", action="store_true",
-                        help="output the .srt file along with the video files")
+    parser.add_argument("--output_sub", action="store_true",
+                        help="output the subtitle file (default .srt) along with the video files")
     parser.add_argument("--output_txt", action="store_true",
                         help="whether to also save the subtitles as a .txt file")
-    parser.add_argument("--srt_only", action="store_true",
-                        help="only generate the .srt file and not create overlayed video")
+    parser.add_argument("--sub_only", action="store_true",
+                        help="only generate the subtitle file and not create overlayed video")
     parser.add_argument("--verbose", action="store_true",
                         help="print out the progress and debug messages")
     
@@ -42,10 +42,10 @@ def main():
     args = parser.parse_args().__dict__
     model_name: str = args.pop("model")
     output_dir: str = args.pop("output_dir")
-    output_srt: bool = args.pop("output_srt")
+    output_sub: bool = args.pop("output_sub")
     subtitle_format: str = args.pop("subtitle_format")
     output_txt: bool = args.pop("output_txt")
-    srt_only: bool = args.pop("srt_only")
+    sub_only: bool = args.pop("sub_only")
     verbose: bool = args["verbose"]
     language: str = args.pop("language")
     output_mkv: bool = args.pop("output_mkv")
@@ -64,10 +64,10 @@ def main():
     model = whisper.load_model(model_name)
     audios = get_audio(args.pop("video"))
     subtitles = get_subtitles(
-        audios, output_srt or srt_only, subtitle_format,output_txt, output_dir, lambda audio_path: model.transcribe(audio_path, **args)        
+        audios, output_sub or sub_only, subtitle_format,output_txt, output_dir, lambda audio_path: model.transcribe(audio_path, **args)        
     )
 
-    if srt_only:
+    if sub_only:
         return
 
     ext = "mkv" if output_mkv else "mp4"
@@ -110,11 +110,11 @@ def get_audio(paths):
 
 
 
-def get_subtitles(audio_paths: list, output_srt: bool,subtitle_format: str,output_txt: bool, output_dir: str, transcribe: callable):
+def get_subtitles(audio_paths: list, output_sub: bool,subtitle_format: str,output_txt: bool, output_dir: str, transcribe: callable):
     subtitles_path = {}
 
     for path, audio_path in audio_paths.items():
-        srt_path = output_dir if output_srt else tempfile.gettempdir()
+        srt_path = output_dir if output_sub else tempfile.gettempdir()
 
         if(subtitle_format=="srt"):
             srt_path = os.path.join(srt_path, f"{filename(path)}.srt")
